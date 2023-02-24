@@ -45,6 +45,9 @@ async function getClasses(schoolPrefix, sessionId) {
     });
     return classText;
   });
+  console.log(classText);
+  // we do a little debugging
+  
 
   // Parse the class text into an array of objects
   const classes = [];
