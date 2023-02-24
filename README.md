@@ -20,12 +20,12 @@ Now it's time to use the api!
 ## Usage
 The usage of compasseduapi is very easy, just import the package and use the functions! An example of how you can use the api is shown below. More in-depth documentation can be found in the documentation section. (Coming Soon)
 ```js
-const { cumpass } = require('compasseduapi');
+const { getClasses } = require('compasseduapi');
 
 async function test() {
   const schoolPrefix = 'school_prefix_here';
   const sessionId = 'your_asp.net.session_id_here';
-  const classes = await cumpass(schoolPrefix, sessionId);
+  const classes = await getClasses(schoolPrefix, sessionId);
   console.log(classes);
 }
 
