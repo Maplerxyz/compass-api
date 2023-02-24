@@ -1,6 +1,6 @@
 {
   "name": "compasseduapi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An unofficial API for JDLF'S Compass school manager (compass.education) using puppeteer",
   "main": "index.js",
   "scripts": {
@@ -19,5 +19,5 @@
   "bugs": {
     "url": "https://github.com/Maplerxyz/compasseduapi/issues"
   },
-  "homepage": "https://github.com/Maplerxyz/compasseduapi#readme"
+  "homepage": "https://mapler.com.au/"
 }

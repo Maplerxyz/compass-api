@@ -1,117 +1,68 @@
-'use strict';
+const puppeteer = require('puppeteer');
 
-const p = require('puppeteer');
-const EventEmitter = require('events');
+async function getClasses(schoolPrefix, sessionId) {
+  // Check if school prefix is valid
+  if (schoolPrefix.includes('schools.compass.education')) {
+    console.log('Invalid school prefix');
+    return;
+  }
 
-class Compass extends EventEmitter {
+  // Set up Puppeteer
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
 
-    BASE_URL = null;
+  // Go to Compass login page
+  await page.goto(`https://${schoolPrefix}.compass.education/Login.aspx`);
 
-    browser = null;
-    page = null;
+  // Set the ASP.NET_SessionId cookie
+  await page.setCookie({
+    name: 'ASP.NET_SessionId',
+    value: sessionId,
+    domain: `${schoolPrefix}.compass.education`,
+    path: '/',
+  });
 
-    settings = {showChrome: false, pageDelay: 2500};
+  // Refresh the page to log in with the cookie
+  await page.reload();
 
-    constructor(school_prefix, settings) {
-        
-        super();
+  // Check if ASP.NET_SessionId is valid
+  const invalidSessionId = await page.evaluate(() => {
+    const title = document.title;
+    return title === 'Error - Compass' || title === 'Error';
+  });
+  if (invalidSessionId) {
+    console.log('Invalid ASP.NET_SessionId');
+    await browser.close();
+    return;
+  }
 
-        if(typeof school_prefix != 'string' && typeof school_prefix != 'undefined')
-            throw(new Error(`Invalid type for school_prefix, ${typeof school_prefix} not string`));
+  // Look for .ext-evt-bd and get the text from it
+  const classText = await page.evaluate(() => {
+    const classElements = document.querySelectorAll('.ext-evt-bd');
+    const classText = [];
+    classElements.forEach((element) => {
+      classText.push(element.innerText);
+    });
+    return classText;
+  });
 
-        if(typeof settings != 'object' && typeof settings != 'undefined')
-            throw(new Error(`Invalid type for settings, ${typeof settings} not object`));
+  // Parse the class text into an array of objects
+  const classes = [];
+  for (const i in classText) {
+    const newClass = {};
+    const classData = classText[i].split(' ');
+    newClass.time = classData[0].slice(0, -1);
+    newClass.name = classData[3];
+    newClass.room = classData[5];
+    newClass.teacher = classData[7];
+    classes.push(newClass);
+  }
 
-        if(!school_prefix)
-            throw(new Error("Missing school_prefix constructor"));
-
-        this.BASE_URL = `https://${school_prefix}.compass.education/`;
-
-        if(settings != undefined) this.settings = settings;
-
-        if(!this.settings.showChrome) this.settings.showChrome = false;
-        if(!this.settings.pageDelay) this.settings.pageDelay = 2500;
-
-        this.init();
-
-    }
-
-    async checkLoggedIn() {
-
-        if(this.page == null)
-            throw(new Error(`Compass instance not initialized`))
-
-        await this.page.goto(this.BASE_URL, { waitUntil: 'networkidle2' });
-
-        const cookies = await this.page.cookies();
-
-        for(let cookie of cookies) {
-            if(cookie.name == "ASP.NET_SessionId") {
-                this.emit('logged-in');
-                return true;
-            }
-        }
-
-        return false;
-
-    }
-
-    async getClasses() {
-        if (this.page === null) {
-            throw new Error('Compass page not initialized');
-        }
-
-        const classText = await this.page.evaluate(() => [...document.querySelectorAll('.ext-evt-bd')].map(elem => elem.innerText));
-        var classes = [];
-
-        for(var i in classText) {
-
-            var newClass = {};
-
-            var classData = classText[i].split(' ');
-
-            newClass.time = classData[0].slice(0, -1);
-            newClass.name = classData[3];
-            newClass.room = classData[5];
-            newClass.teacher = classData[7];
-
-            classes.push(newClass);
-
-        }
-
-        return classes;
-
-    }
-
-    async returnHome() {
-
-        await this.page.goto(this.BASE_URL, { waitUntil: 'networkidle2' });
-
-        await this.page.waitFor(this.settings.pageDelay);
-        
-    }
-
-    async init() {
-        
-
-        this.browser = await p.launch({
-            headless: !this.settings.showChrome
-        });
-
-        this.page = await this.browser.newPage();
-
-        if(await this.checkLoggedIn()) {
-            console.log('User is logged in.');
-        } else {
-            console.log('User is not logged in.');
-        }
-
-        this.emit('initialized');
-
-    }
-
-
+  // Close the browser and return the classes
+  await browser.close();
+  return classes;
 }
 
-
-module.exports = Compass;
+module.exports = {
+  getClasses,
+};
