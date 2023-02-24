@@ -5,7 +5,7 @@
 
 const puppeteer = require('puppeteer');
 
-async function getClasses(schoolPrefix, sessionId) {
+async function getClasses(schoolPrefix, sessionId, date) {
   const url = `https://${schoolPrefix}.compass.education/`;
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -20,27 +20,36 @@ async function getClasses(schoolPrefix, sessionId) {
   await page.goto(url);
 
   try {
-    await page.waitForSelector(`#calendardaywidget-1013-day-bd-day-col-${formattedDate}`, { timeout: 5000 });
+    await page.waitForSelector(`#calendardaywidget-1013-day-bd-day-col-${date}`, { timeout: 5000 });
   } catch (error) {
-    console.log('Failed to find calendar! We do a little debugging');
+    console.log(`Failed to find calendar for date ${date}.`);
     await browser.close();
     return [];
   }
 
-  const classes = [];
-  const events = await page.$$(// select all events under the specified date div
-    `#calendardaywidget-1013-day-bd-day-col-${formattedDate} > div`
-  );
-  for (const event of events) {
-    const className = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[2]);
-    const classTime = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[0]);
-    const classRoom = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[4]);
-    const classTeacher = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[6]);
-    classes.push({ name: className, time: classTime, room: classRoom, teacher: classTeacher });
+  try {
+    const events = await page.$$('div[id^="ext-gen"]');
+    const classes = [];
+    for (const event of events) {
+      const classData = await event.$('.ext-evt-bd');
+      if (classData) {
+        const classText = await classData.evaluate(node => node.innerText);
+        const newClass = {};
+        const classDetails = classText.split('\n');
+        newClass.time = classDetails[0];
+        newClass.name = classDetails[1];
+        newClass.room = classDetails[2];
+        newClass.teacher = classDetails[3];
+        classes.push(newClass);
+      }
+    }
+    await browser.close();
+    return classes;
+  } catch (error) {
+    console.log(`An error occurred while extracting classes for date ${date}: ${error}`);
+    await browser.close();
+    return [];
   }
-
-  await browser.close();
-  return classes;
 }
 
 module.exports = getClasses;

@@ -1,6 +1,6 @@
 {
   "name": "compasseduapi",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "An unofficial API for JDLF'S Compass school manager (compass.education) using puppeteer",
   "main": "index.js",
   "scripts": {
