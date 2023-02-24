@@ -1,0 +1,23 @@
+{
+  "name": "compasseduapi",
+  "version": "1.0.0",
+  "description": "An unofficial API for JDLF'S Compass school manager (compass.education) using puppeteer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maplerxyz/compasseduapi.git"
+  },
+  "keywords": [
+    "compass",
+    "compass.education"
+  ],
+  "author": "Maplerxyz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Maplerxyz/compasseduapi/issues"
+  },
+  "homepage": "https://github.com/Maplerxyz/compasseduapi#readme"
+}
