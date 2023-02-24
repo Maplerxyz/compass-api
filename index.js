@@ -6,7 +6,7 @@
 const puppeteer = require('puppeteer');
 
 async function getClasses(schoolPrefix, sessionId) {
-  const url = `https://${schoolPrefix}.compass.education/Calendar/CalendarWeek`;
+  const url = `https://${schoolPrefix}.compass.education/`;
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   const cookies = [
@@ -20,31 +20,23 @@ async function getClasses(schoolPrefix, sessionId) {
   await page.goto(url);
 
   try {
-    await page.waitForSelector('.ext-evt-bd', { timeout: 5000 });
+    await page.waitForSelector(`#calendardaywidget-1013-day-bd-day-col-${formattedDate}`, { timeout: 5000 });
   } catch (error) {
     console.log('Failed to find calendar! We do a little debugging');
     await browser.close();
     return [];
   }
 
-  const classText = await page.evaluate(() => {
-    const classElements = document.querySelectorAll('.ext-evt-bd');
-    const classText = [];
-    classElements.forEach((element) => {
-      classText.push(element.innerText);
-    });
-    return classText;
-  });
-
   const classes = [];
-  for (const i in classText) {
-    const newClass = {};
-    const classData = classText[i].split(' ');
-    newClass.time = classData[0].slice(0, -1);
-    newClass.name = classData[3];
-    newClass.room = classData[5];
-    newClass.teacher = classData[7];
-    classes.push(newClass);
+  const events = await page.$$(// select all events under the specified date div
+    `#calendardaywidget-1013-day-bd-day-col-${formattedDate} > div`
+  );
+  for (const event of events) {
+    const className = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[2]);
+    const classTime = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[0]);
+    const classRoom = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[4]);
+    const classTeacher = await event.$eval('.ext-evt-bd', (element) => element.innerText.split(':')[6]);
+    classes.push({ name: className, time: classTime, room: classRoom, teacher: classTeacher });
   }
 
   await browser.close();
