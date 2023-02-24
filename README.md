@@ -9,7 +9,7 @@ The installion of compasseduapi is very easy due to the api being an npm package
 ```bash
 npm install compasseduapi
 ```
-If you haven't already, install puppeteer as well:
+If puppeteer fails to install with the package you can always install it manually with the following command:
 
 ```bash
 npm install puppeteer
