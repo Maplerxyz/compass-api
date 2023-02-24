@@ -1,42 +1,32 @@
+// this package is in early development and is not ready for production use
+// nothing will work, so dont complainn about it on the issues page
+// if u know how to fix something feel free to make a pull request and make an issue describing the problem and how to fix it it with as much detail as possible
+// i luv u so much bye bye <3
+
 const puppeteer = require('puppeteer');
 
 async function getClasses(schoolPrefix, sessionId) {
-  // Check if school prefix is valid
-  if (schoolPrefix.includes('schools.compass.education')) {
-    console.log('Invalid school prefix');
-    return;
-  }
-
-  // Set up Puppeteer
+  const url = `https://${schoolPrefix}.compass.education/Calendar/CalendarWeek`;
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
+  const cookies = [
+    {
+      name: 'ASP.NET_SessionId',
+      value: sessionId,
+      domain: `${schoolPrefix}.compass.education`,
+    },
+  ];
+  await page.setCookie(...cookies);
+  await page.goto(url);
 
-  // Go to Compass login page
-  await page.goto(`https://${schoolPrefix}.compass.education/Login.aspx`);
-
-  // Set the ASP.NET_SessionId cookie
-  await page.setCookie({
-    name: 'ASP.NET_SessionId',
-    value: sessionId,
-    domain: `${schoolPrefix}.compass.education`,
-    path: '/',
-  });
-
-  // Refresh the page to log in with the cookie
-  await page.reload();
-
-  // Check if ASP.NET_SessionId is valid
-  const invalidSessionId = await page.evaluate(() => {
-    const title = document.title;
-    return title === 'Error - Compass' || title === 'Error';
-  });
-  if (invalidSessionId) {
-    console.log('Invalid ASP.NET_SessionId');
+  try {
+    await page.waitForSelector('.ext-evt-bd', { timeout: 5000 });
+  } catch (error) {
+    console.log('Failed to find calendar! We do a little debugging');
     await browser.close();
-    return;
+    return [];
   }
 
-  // Look for .ext-evt-bd and get the text from it
   const classText = await page.evaluate(() => {
     const classElements = document.querySelectorAll('.ext-evt-bd');
     const classText = [];
@@ -45,11 +35,7 @@ async function getClasses(schoolPrefix, sessionId) {
     });
     return classText;
   });
-  console.log(classText);
-  // we do a little debugging
-  
 
-  // Parse the class text into an array of objects
   const classes = [];
   for (const i in classText) {
     const newClass = {};
@@ -61,11 +47,8 @@ async function getClasses(schoolPrefix, sessionId) {
     classes.push(newClass);
   }
 
-  // Close the browser and return the classes
   await browser.close();
   return classes;
 }
 
-module.exports = {
-  getClasses,
-};
+module.exports = getClasses;
