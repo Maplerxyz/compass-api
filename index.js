@@ -57,6 +57,9 @@ class Compass extends EventEmitter {
     }
 
     async getClasses() {
+        if (this.page === null) {
+            throw new Error('Compass page not initialized');
+        }
 
         const classText = await this.page.evaluate(() => [...document.querySelectorAll('.ext-evt-bd')].map(elem => elem.innerText));
         var classes = [];
